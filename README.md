@@ -1,16 +1,22 @@
-## Hi there 👋
+# 💼 Python Developer | Web Scraping Expert | Automation Specialist
 
-<!--
-**liuyuzhe530/liuyuzhe530** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+## 👋 Hi, I'm Yuze Liu
 
-Here are some ideas to get you started:
+I'm a Python developer specializing in **systematic web scraping**, **automation** and **AI integration**.
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+This profile showcases my professional skills:
+
+- 🕷️  Expert web scraping (BeautifulSoup, Scrapy, Playwright)
+- ⚡  Automation scripts (Selenium, custom bots)
+- 🤖  AI LLMs (GPT-4, LangChain, CrewAI)
+- 🔧  API development (Flask, FastAPI)
+
+## 💰 Freelance Services
+
+Looking for Python development, web scraping, or automation services?
+
+📧 Email: liuyuzhe530@gmail.com
+
+---
+
+*Open for freelance projects! Let's discuss your needs!*
