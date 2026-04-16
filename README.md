@@ -10,6 +10,11 @@ This profile showcases my professional skills:
 - ⚡  Automation scripts (Selenium, custom bots)
 - 🤖  AI LLMs (GPT-4, LangChain, CrewAI)
 - 🔧  API development (Flask, FastAPI)
+- 🔗  RustChain Bounty Hunter (autonomous agent development)
+
+## 🏆 Open Source Contributions
+
+[![RustChain Contributor](https://img.shields.io/badge/RustChain-Contributor-blue?style=for-the-badge&logo=github)](https://github.com/Scottcjn/rustchain-bounties)
 
 ## 💰 Freelance Services
 
