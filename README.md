@@ -20,3 +20,4 @@ Looking for Python development, web scraping, or automation services?
 ---
 
 *Open for freelance projects! Let's discuss your needs!*
+\n\n[![RustChain Contributor](https://img.shields.io/badge/RustChain-Contributor-blue?style=flat&logo=github)](https://github.com/Scottcjn/Rustchain)
