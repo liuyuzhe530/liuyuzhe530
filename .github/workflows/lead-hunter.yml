@@ -1,0 +1,36 @@
+name: 爬虫需求猎手
+
+on:
+  schedule:
+    # 每6小时检查一次
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查最新Issues
+        run: |
+          curl -s "https://api.github.com/repos/NanmiCoder/MediaCrawler/issues?state=open&per_page=50&sort=created&direction=desc" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "User-Agent: Mozilla/5.0" > issues.json
+          
+          echo "=== 最近需求线索 ==="
+          cat issues.json | python3 -c "
+import json, sys
+issues = json.load(sys.stdin)
+keywords = ['需要', '定制', '外包', '求助', '哪里', '谁能', '收费', '付费', '求', '想要', '开发', '爬取']
+for i in issues:
+    body = (i.get('body','') + i.get('title','')).lower()
+    title = i.get('title','')
+    user = i.get('user',{}).get('login','')
+    url = i.get('html_url','')
+    # 检查关键词
+    matched = [k for k in keywords if k in body or k in title.lower()]
+    if matched:
+        print(f'[@{user}] {title}')
+        print(f'  链接: {url}')
+        print(f'  匹配: {matched}')
+        print()
+"
