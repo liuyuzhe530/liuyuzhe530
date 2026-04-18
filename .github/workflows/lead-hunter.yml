@@ -2,162 +2,39 @@ name: 爬虫需求猎手
 
 on:
   schedule:
-    # 每小时检查一次
     - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
-  hunt-and-notify:
+  hunt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: 读取已处理记录
+      - name: 初始化追踪文件
         run: |
+          mkdir -p .github
           if [ ! -f .github/lead-tracker.json ]; then
             echo '{"processed": []}' > .github/lead-tracker.json
           fi
-          echo "已追踪 $(cat .github/lead-tracker.json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get(\"processed\",[])))') 条issues"
 
-      - name: 扫描最新Issues
-        id: scan
-        run: |
-          curl -s "https://api.github.com/repos/NanmiCoder/MediaCrawler/issues?state=open&per_page=30&sort=created&direction=desc" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "User-Agent: Mozilla/5.0" > issues.json
-          
-          python3 << 'PYEOF'
-import json, os
-
-with open('issues.json') as f:
-    issues = json.load(f)
-
-tracker_file = '.github/lead-tracker.json'
-tracker = {'processed': []}
-if os.path.exists(tracker_file):
-    with open(tracker_file) as f:
-        tracker = json.load(f)
-
-processed = set(tracker.get('processed', []))
-keywords = ['需要','定制','外包','求助','哪里','谁能','收费','付费','求','想要','开发','爬取','可以实现','帮我','请问能']
-
-new_leads = []
-for i in issues:
-    issue_id = str(i['id'])
-    if issue_id in processed:
-        continue
-    title = i.get('title', '')
-    body = (i.get('body') or '')[:300]
-    user = i.get('user', {}).get('login', '')
-    url = i.get('html_url', '')
-    created = i.get('created_at', '')[:10]
-    full_text = (title + body).lower()
-    matched = [k for k in keywords if k in full_text]
-    if matched:
-        new_leads.append({
-            'id': issue_id,
-            'user': user,
-            'title': title,
-            'url': url,
-            'created': created,
-            'matched': matched
-        })
-        processed.add(issue_id)
-
-with open('new_leads.json', 'w') as f:
-    json.dump(new_leads, f, ensure_ascii=False)
-
-# 保存更新的tracker
-with open('.github/lead-tracker.json', 'w') as f:
-    tracker['processed'] = list(processed)[-200:]
-    json.dump(tracker, f, ensure_ascii=False, indent=2)
-
-print(f"NEW_LEADS={len(new_leads)}")
-for lead in new_leads:
-    print(f"LEAD: @{lead['user']} | {lead['created']} | {lead['title'][:60]}")
-    print(f"URL: {lead['url']}")
-    print(f"MATCHED: {lead['matched']}")
-    print("---")
-PYEOF
-
-      - name: 发送邮件通知
-        if: runner.new_leads != '0'
-        run: |
-          python3 << 'PYEOF'
-import json, os, urllib.request
-
-with open('new_leads.json') as f:
-    leads = json.load(f)
-
-if not leads:
-    print("无新需求")
-    exit(0)
-
-api_key = os.environ['BREVO_API_KEY']
-sender_email = os.environ['BREVO_SENDER_EMAIL']
-sender_name = os.environ['BREVO_SENDER_NAME']
-notify_email = os.environ['NOTIFY_EMAIL']
-
-lines = [
-    "🔍 全自动猎客报告",
-    "=" * 50,
-    f"发现 {len(leads)} 条新需求",
-    "",
-]
-for i, lead in enumerate(leads):
-    lines.append(f"{i+1}. @{lead['user']} | {lead['created']}")
-    lines.append(f"   标题: {lead['title']}")
-    lines.append(f"   链接: {lead['url']}")
-    lines.append(f"   匹配: {', '.join(lead['matched'])}")
-    lines.append("")
-
-lines.extend([
-    "",
-    "=" * 50,
-    "回复模板（直接发给客户）：",
-    "",
-    "你好，看到你的问题。我提供付费技术定制开发服务，",
-    "50元起，当天交付。承接各类数据采集、爬虫定制、报错修复。",
-    "有需要请回复或加我：",
-    "GitHub: https://github.com/liuyuzhe530",
-    "",
-    "系统: GitHub Actions 全自动猎客",
-])
-
-payload = {
-    "sender": {"name": sender_name, "email": sender_email},
-    "to": [{"email": notify_email}],
-    "subject": f"【需求线索】发现 {len(leads)} 条新需求",
-    "textContent": "\n".join(lines)
-}
-
-req = urllib.request.Request(
-    'https://api.brevo.com/v3/smtp/email',
-    data=json.dumps(payload).encode(),
-    headers={
-        'api-key': api_key,
-        'Content-Type': 'application/json'
-    },
-    method='POST'
-)
-with urllib.request.urlopen(req, timeout=30) as resp:
-    result = json.loads(resp.read())
-    if result.get('messageId'):
-        print(f"✅ 邮件发送成功: {result['messageId']}")
-    else:
-        print(f"❌ 失败: {result}")
-PYEOF
-
+      - name: 执行猎客脚本
         env:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
           BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: python3 .github/scripts/hunt.py
 
-      - name: 提交追踪记录
+      - name: 提交tracker更新
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .github/lead-tracker.json
-          git diff --cached --quiet || git commit -m "更新需求追踪 [ci skip]"
-          git push origin main || echo "push完成"
+          if git diff --cached --quiet; then
+            echo "无变更"
+          else
+            git commit -m "更新需求追踪 [ci skip]" && git push origin main
+          fi
